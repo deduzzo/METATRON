@@ -18,6 +18,10 @@ def get_connection():
     """Returns a MariaDB connection.
     Reads DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME from env,
     falling back to the original local-only defaults.
+
+    use_pure=True forces the pure-Python implementation: the C extension
+    in mysql-connector-python 9.x has a known crash on ARM64
+    ("Failed converting Python 'str'") under some prepared-statement paths.
     """
     return mysql.connector.connect(
         host=os.environ.get("DB_HOST", "localhost"),
@@ -25,6 +29,7 @@ def get_connection():
         user=os.environ.get("DB_USER", "metatron"),
         password=os.environ.get("DB_PASS", "123"),
         database=os.environ.get("DB_NAME", "metatron"),
+        use_pure=os.environ.get("DB_USE_PURE", "1") == "1",
     )
 
 

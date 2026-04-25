@@ -19,8 +19,12 @@ ENV DEBIAN_FRONTEND=noninteractive \
 #   - nmap, whois, whatweb, curl, dnsutils, nikto
 #   - default-mysql-client utile per debug verso il DB
 #   - build-essential + libmariadb-dev per costruire eventuali wheel
+# nikto e whatweb su Debian bookworm sono nel componente "contrib",
+# quindi abilitiamo contrib + non-free prima di apt-get update.
 # ─────────────────────────────────────────────
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN sed -i 's/^Components: main$/Components: main contrib non-free non-free-firmware/' \
+        /etc/apt/sources.list.d/debian.sources \
+    && apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
         dnsutils \

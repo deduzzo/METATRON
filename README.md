@@ -20,11 +20,71 @@
 > - script `docker/setup-ollama.sh` per installare il modello sull'host
 > - guida completa in [`DOCKER.md`](DOCKER.md)
 >
-> ### Quick start (su Mac)
+ ### Prerequisiti su macOS
+>
+> 1. **Docker Desktop** installato e in esecuzione
+>    (testato con Docker `29.4.0` + Compose `v5.1.2`)
+> 2. **Ollama** installato nativamente sul Mac e in esecuzione su `:11434`
+>    (`brew install ollama` oppure download da https://ollama.com)
+>
+> ### Procedura esatta di avvio (testata su macOS Apple Silicon)
+>
 > ```bash
+> # 1) Clona il fork
+> git clone https://github.com/deduzzo/METATRON.git
+> cd METATRON
+> git checkout docker-setup            # branch con il setup Docker
+>
+> # 2) Configurazione (default sensati: di solito basta copiarlo)
 > cp .env.example .env
-> ./docker/setup-ollama.sh           # una volta sola: scarica + crea metatron-qwen
-> docker compose run --rm metatron   # avvia la CLI
+>
+> # 3) Setup del modello AI (UNA VOLTA SOLA, ~6.6 GB di download)
+> ./docker/setup-ollama.sh
+> # equivalente manuale:
+> #   ollama pull huihui_ai/qwen3.5-abliterated:9b
+> #   ollama create metatron-qwen -f Modelfile
+>
+> # 4) Build dell'immagine Docker (~1.16 GB, qualche minuto)
+> docker compose build
+>
+> # 5) Avvio MariaDB (background) + attesa healthy
+> docker compose up -d mariadb
+>
+> # 6) Lancio della CLI METATRON in foreground
+> docker compose run --rm metatron
+> ```
+>
+> Quando vuoi fermare tutto:
+>
+> ```bash
+> docker compose down       # ferma i container, mantiene il DB
+> docker compose down -v    # azzera anche lo storico (volume DB)
+> ```
+>
+> ### Smoke test rapido (senza CLI interattiva)
+>
+> Per verificare che tutto risponda senza entrare nella TUI:
+>
+> ```bash
+> docker compose run --rm metatron python3 -c "
+> import os, requests, db
+> sl = db.create_session('test'); print('DB OK, sl_no=', sl)
+> r = requests.post(os.environ['OLLAMA_URL'],
+>     json={'model': os.environ['OLLAMA_MODEL'],
+>           'messages': [{'role':'user','content':'reply PONG'}],
+>           'stream': False}, timeout=120)
+> print('OLLAMA OK:', r.json()['message']['content'][:40])
+> db.delete_full_session(sl)
+> "
+> ```
+>
+> Output atteso: `DB OK, sl_no= …` + `OLLAMA OK: PONG`.
+>
+> ### Verifica dei tool di recon
+>
+> ```bash
+> docker compose run --rm metatron bash -c \\
+>   'for t in nmap whois whatweb dig curl nikto; do command -v $t; done'
 > ```
 >
 > Per i dettagli (architettura, troubleshooting, capabilities di rete) leggi
