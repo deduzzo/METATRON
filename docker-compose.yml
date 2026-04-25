@@ -52,6 +52,9 @@ services:
       # Ollama nativo sul Mac host (Apple Silicon / Metal)
       OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434/api/chat}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-metatron-qwen}
+      # Cartella export (PDF/HTML): puntata sul volume /app/exports cosi'
+      # i report finiscono direttamente in ./exports sul Mac.
+      METATRON_EXPORT_DIR: /app/exports
     # Permette al container di raggiungere Ollama nativo dell'host
     # (necessario su Linux; su Mac/Windows e' gia' risolto da Docker Desktop)
     extra_hosts:

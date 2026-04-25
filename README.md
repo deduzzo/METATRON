@@ -61,6 +61,47 @@
 > docker compose down -v    # azzera anche lo storico (volume DB)
 > ```
 >
+> ### ⚠️ Importante: ricostruzione dopo modifiche al codice
+>
+> Il `Dockerfile` copia il codice nell'immagine al momento del build
+> (`COPY . /app`). Questo significa che **ogni volta che modifichi un file
+> Python** (`db.py`, `llm.py`, `metatron.py`, `export.py`, `tools.py`,
+> `search.py`) **devi ricostruire l'immagine prima di rilanciarla**,
+> altrimenti il container userà la versione vecchia copiata al build
+> precedente.
+>
+> ```bash
+> docker compose build      # ricostruisce metatron:latest col nuovo codice
+> docker compose run --rm metatron
+> ```
+>
+> Comando combinato:
+>
+> ```bash
+> docker compose build && docker compose run --rm metatron
+> ```
+>
+> Le modifiche al `docker-compose.yml`, al `.env` e ai file in `docker/`
+> (incluso lo schema SQL iniziale) **non** richiedono un rebuild
+> dell'immagine — basta rilanciare `docker compose up` / `run`.
+> Modifiche allo schema SQL richiedono però l'azzeramento del volume DB
+> (`docker compose down -v`) perche' lo script di init viene eseguito solo
+> al primo avvio.
+>
+> ### Dove finiscono i report (PDF/HTML)
+>
+> Quando dalla CLI esporti una sessione, il file viene scritto su
+> `/app/exports` dentro il container, che è bind-mount sulla cartella
+> `./exports/` del Mac. Quindi ritrovi i report direttamente qui:
+>
+> ```bash
+> open ./exports/                    # apre la cartella nel Finder
+> ls ./exports/*.html ./exports/*.pdf
+> ```
+>
+> Il path è controllato dalla env var `METATRON_EXPORT_DIR`. Se esegui
+> METATRON nativo (fuori da Docker) il default resta `~/METATRON/reports`.
+>
 > ### Smoke test rapido (senza CLI interattiva)
 >
 > Per verificare che tutto risponda senza entrare nella TUI:

@@ -373,7 +373,12 @@ def export_menu(data: dict):
     print(f"\033[90m{'─'*60}\033[0m")
 
     choice     = input("\033[36mExport format: \033[0m").strip()
-    output_dir = os.path.expanduser("~/METATRON/reports")
+    # In Docker viene impostato METATRON_EXPORT_DIR=/app/exports (volume verso
+    # ./exports sul Mac); nativo lascia il default storico ~/METATRON/reports.
+    output_dir = os.environ.get(
+        "METATRON_EXPORT_DIR",
+        os.path.expanduser("~/METATRON/reports"),
+    )
     os.makedirs(output_dir, exist_ok=True)
 
     if choice == "1":
