@@ -1,5 +1,39 @@
-# METATRON
-AI-powered penetration testing assistant using local LLM on linux (Parrot OS)
+# METATRON (fork Docker / macOS)
+
+> **Fork di [sooryathejas/METATRON](https://github.com/sooryathejas/METATRON)**
+> mantenuto da [@deduzzo](https://github.com/deduzzo).
+>
+> **Scopo del fork:** rendere METATRON utilizzabile **fuori da Parrot OS**,
+> in particolare **da macOS (Apple Silicon e Intel)**, **senza dover installare
+> sull'host i tool di pentest** (`nmap`, `nikto`, `whatweb`, ecc.) ne'
+> MariaDB. Tutto cio' che e' specifico di Linux viene isolato in **container
+> Docker**, mentre Ollama resta **nativo sul Mac** per sfruttare l'accelerazione
+> Metal/Apple Silicon (~10x piu' veloce di Ollama in container su CPU).
+>
+> ### Cosa cambia rispetto all'upstream
+> - `Dockerfile` con tutti i tool di recon su immagine Debian slim
+> - `docker-compose.yml` che orchestra app + MariaDB + healthcheck
+> - schema SQL inizializzato automaticamente al primo avvio (`docker/initdb/`)
+> - `db.py` e `llm.py` ora leggono host/credenziali/endpoint Ollama da
+>   **variabili d'ambiente**, con fallback agli stessi default originali
+>   (quindi l'esecuzione **nativa su Parrot resta supportata**)
+> - script `docker/setup-ollama.sh` per installare il modello sull'host
+> - guida completa in [`DOCKER.md`](DOCKER.md)
+>
+> ### Quick start (su Mac)
+> ```bash
+> cp .env.example .env
+> ./docker/setup-ollama.sh           # una volta sola: scarica + crea metatron-qwen
+> docker compose run --rm metatron   # avvia la CLI
+> ```
+>
+> Per i dettagli (architettura, troubleshooting, capabilities di rete) leggi
+> [`DOCKER.md`](DOCKER.md). Il resto di questo README e' la documentazione
+> originale dell'upstream e descrive l'installazione **nativa su Parrot OS**,
+> che continua a funzionare invariata.
+
+---
+
 # 🔱 METATRON
 ### AI-Powered Penetration Testing Assistant
 

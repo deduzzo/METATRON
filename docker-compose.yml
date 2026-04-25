@@ -1,0 +1,77 @@
+services:
+  # ─────────────────────────────────────────────
+  # MariaDB — schema metatron creato all'avvio dal file
+  # docker/initdb/01-schema.sql
+  # ─────────────────────────────────────────────
+  mariadb:
+    image: mariadb:11.4
+    container_name: metatron-mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASS:-rootpass}
+      MARIADB_DATABASE: ${DB_NAME:-metatron}
+      MARIADB_USER: ${DB_USER:-metatron}
+      MARIADB_PASSWORD: ${DB_PASS:-123}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    ports:
+      # Espongo solo su localhost dell'host (utile per ispezionarlo da Mac)
+      - "127.0.0.1:3306:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - metatron-net
+
+  # ─────────────────────────────────────────────
+  # METATRON app — CLI interattiva
+  # Su Mac: si collega a Ollama nativo via host.docker.internal:11434
+  # ─────────────────────────────────────────────
+  metatron:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: metatron:latest
+    container_name: metatron-app
+    # CLI interattiva -> tty + stdin_open
+    tty: true
+    stdin_open: true
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      # DB
+      DB_HOST: mariadb
+      DB_PORT: "3306"
+      DB_NAME: ${DB_NAME:-metatron}
+      DB_USER: ${DB_USER:-metatron}
+      DB_PASS: ${DB_PASS:-123}
+      # Ollama nativo sul Mac host (Apple Silicon / Metal)
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434/api/chat}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-metatron-qwen}
+    # Permette al container di raggiungere Ollama nativo dell'host
+    # (necessario su Linux; su Mac/Windows e' gia' risolto da Docker Desktop)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # Export PDF/HTML scritti dall'app finiscono qui sul Mac
+      - ./exports:/app/exports
+    networks:
+      - metatron-net
+    # Capacita' di rete extra per nmap (SYN scan, raw socket).
+    # Senza queste, nmap funziona solo in modalita' connect-scan.
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+
+volumes:
+  mariadb_data:
+    name: metatron_mariadb_data
+
+networks:
+  metatron-net:
+    name: metatron-net
+    driver: bridge

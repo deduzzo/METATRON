@@ -6,17 +6,20 @@ Builds prompts, handles AI responses, runs tool dispatch loop.
 Model: metatron-qwen (fine-tuned from huihui_ai/qwen3.5-abliterated:9b)
 """
 
+import os
 import re
 import requests
 import json
 from tools import run_tool_by_command, run_nmap, run_curl_headers
 from search import handle_search_dispatch
 
-OLLAMA_URL  = "http://localhost:11434/api/chat"
-MODEL_NAME  = "metatron-qwen"
-MAX_TOKENS = 8192
-MAX_TOOL_LOOPS = 9   # max times AI can call tools per session
-OLLAMA_TIMEOUT = 600 
+# OLLAMA_URL can be overridden via env (e.g. http://host.docker.internal:11434/api/chat
+# when running METATRON inside Docker on macOS with Ollama installed natively on the host).
+OLLAMA_URL  = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/chat")
+MODEL_NAME  = os.environ.get("OLLAMA_MODEL", "metatron-qwen")
+MAX_TOKENS = int(os.environ.get("OLLAMA_MAX_TOKENS", "8192"))
+MAX_TOOL_LOOPS = int(os.environ.get("OLLAMA_MAX_TOOL_LOOPS", "9"))   # max times AI can call tools per session
+OLLAMA_TIMEOUT = int(os.environ.get("OLLAMA_TIMEOUT", "600"))
 
 # ─────────────────────────────────────────────
 # SYSTEM PROMPT
